@@ -1,64 +1,15 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck, faTimes, faCircle } from "@fortawesome/free-solid-svg-icons";
-import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
+import InputField from "../../components/InputField";
+import { useAuth } from "../../context/AuthContext";
 
 // Regex para validar email
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-interface InputFieldProps {
-  label: string;
-  type: string;
-  value: string;
-  setValue: React.Dispatch<React.SetStateAction<string>>;
-  valid: boolean;
-  placeholder?: string;
-  required?: boolean;
-  inputRef?: React.RefObject<HTMLInputElement | null>;
-  showValidIcon?: boolean;
-}
-
-export const InputField: React.FC<InputFieldProps> = ({
-  label,
-  type,
-  value,
-  setValue,
-  valid,
-  placeholder,
-  required,
-  inputRef,
-  showValidIcon = true,
-}) => (
-  <label className="flex flex-col">
-    <span className="font-semibold">{label}</span>
-    <div className="flex items-center border rounded px-2">
-      <input
-        ref={inputRef}
-        type={type}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        aria-invalid={!valid}
-        required={required}
-        placeholder={placeholder}
-        className="p-2 w-full outline-none bg-transparent"
-      />
-      {showValidIcon && (
-        <FontAwesomeIcon
-          icon={valid ? faCheck : value ? faTimes : faCircle}
-          className={`ml-2 ${
-            valid ? "text-green-500" : value ? "text-red-500" : "text-gray-400"
-          }`}
-        />
-      )}
-    </div>
-  </label>
-);
-
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login } = useAuth(); // login seguro vía cookies HttpOnly
   const router = useRouter();
   const emailRef = useRef<HTMLInputElement>(null);
 
@@ -69,7 +20,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (emailRef.current) emailRef.current.focus();
+    emailRef.current?.focus();
   }, []);
 
   useEffect(() => {
@@ -78,6 +29,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!validEmail || !password) {
       setError("Por favor, completa los campos correctamente.");
       return;
@@ -85,11 +37,26 @@ export default function LoginPage() {
 
     setLoading(true);
     setError("");
+
     try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+        method: "POST",
+        credentials: "include", // cookies HttpOnly
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Error al iniciar sesión.");
+
+      // Actualizar contexto de usuario
       await login(email, password);
-      router.push("/dashboard"); // <--- redirección automática al dashboard
+
+      // Redirigir al dashboard
+      router.push("/dashboard");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Error al iniciar sesión.");
+      setError(err.message || "Error desconocido.");
     } finally {
       setLoading(false);
     }

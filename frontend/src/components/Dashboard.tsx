@@ -41,7 +41,7 @@ export const Dashboard = () => {
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">
-        Dashboard de Proyectos de {user.name}
+        Dashboard de Proyectos de {user.username}
       </h1>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={projects}>

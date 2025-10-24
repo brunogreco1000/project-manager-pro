@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import InputField from "../../components/InputField";
 import { useAuth } from "../../context/AuthContext";
-import { api } from "../../services/api";
 
 // Regex de validación
 const USER_REGEX = /^[A-Za-z][A-Za-z0-9-_]{3,23}$/;
@@ -11,7 +11,8 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,24}$/;
 
 export default function RegisterPage() {
-  const { login } = useAuth(); // usamos login directamente
+  const { login } = useAuth(); // login seguro vía cookies HttpOnly
+  const router = useRouter();
   const userRef = useRef<HTMLInputElement>(null);
 
   const [username, setUsername] = useState("");
@@ -24,12 +25,13 @@ export default function RegisterPage() {
   const [validConfirm, setValidConfirm] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState("");
 
+  // Enfocar input al cargar la página
   useEffect(() => {
-    if (userRef.current) userRef.current.focus();
+    userRef.current?.focus();
   }, []);
 
+  // Validaciones en tiempo real
   useEffect(() => {
     setValidUsername(USER_REGEX.test(username));
     setValidEmail(EMAIL_REGEX.test(email));
@@ -39,21 +41,34 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!validUsername || !validEmail || !validPassword || !validConfirm) {
-      setError("Por favor, corrige los campos marcados antes de continuar.");
+      setError("Por favor, corrige los campos antes de continuar.");
       return;
     }
 
     setLoading(true);
     setError("");
+
     try {
-      const response = await api.post("/auth/register", { username, email, password });
-      if (response.status === 201 && response.data.user) {
-        await login(email, password); // login automático
-        setSuccess("Cuenta creada correctamente.");
-      }
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
+        method: "POST",
+        credentials: "include", // Muy importante para cookies HttpOnly
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Error al registrar.");
+
+      // Login automático tras registro
+      await login(email, password);
+
+      // Redirigir al dashboard tras registro
+      router.push("/dashboard");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Error al registrar. Intenta nuevamente.");
+      setError(err.message || "Error desconocido.");
     } finally {
       setLoading(false);
     }
@@ -102,7 +117,6 @@ export default function RegisterPage() {
         />
 
         {error && <p className="text-red-600 text-sm text-center">{error}</p>}
-        {success && <p className="text-green-600 text-sm text-center">{success}</p>}
 
         <button
           type="submit"

@@ -12,7 +12,7 @@ export interface InputFieldProps {
   valid: boolean;
   placeholder?: string;
   required?: boolean;
-  inputRef?: RefObject<HTMLInputElement | null>;
+  inputRef?: RefObject<HTMLInputElement>;
   showValidIcon?: boolean;
 }
 
