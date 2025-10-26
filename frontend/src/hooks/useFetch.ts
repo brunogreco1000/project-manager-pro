@@ -1,5 +1,7 @@
+"use client";
+
 import { useState, useEffect } from "react";
-import { api } from "../services/api";
+import { api } from "../services/api"; // axios instance
 import { AxiosError } from "axios";
 
 export const useFetch = <T>(url: string, deps: any[] = []) => {
@@ -22,6 +24,7 @@ export const useFetch = <T>(url: string, deps: any[] = []) => {
         setLoading(false);
       }
     };
+
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);

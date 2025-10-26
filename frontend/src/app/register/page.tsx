@@ -2,16 +2,16 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import InputField from "../../components/InputField";
 import { useAuth } from "../../context/AuthContext";
+import InputField from "../../components/InputField";
+import { api } from "../../services/api"; 
 
-// Regex de validación
 const USER_REGEX = /^[A-Za-z][A-Za-z0-9-_]{3,23}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,24}$/;
 
 export default function RegisterPage() {
-  const { login } = useAuth(); // login seguro vía cookies HttpOnly
+  const { login } = useAuth();
   const router = useRouter();
   const userRef = useRef<HTMLInputElement>(null);
 
@@ -26,12 +26,10 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Enfocar input al cargar la página
   useEffect(() => {
     userRef.current?.focus();
   }, []);
 
-  // Validaciones en tiempo real
   useEffect(() => {
     setValidUsername(USER_REGEX.test(username));
     setValidEmail(EMAIL_REGEX.test(email));
@@ -51,24 +49,17 @@ export default function RegisterPage() {
     setError("");
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
-        method: "POST",
-        credentials: "include", // Muy importante para cookies HttpOnly
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, password }),
+      const { data } = await api.post("/auth/register", {
+        username,
+        email,
+        password,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.message || "Error al registrar.");
-
-      // Login automático tras registro
+     
       await login(email, password);
-
-      // Redirigir al dashboard tras registro
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message || "Error desconocido.");
+      setError(err.response?.data?.message || err.message || "Error desconocido.");
     } finally {
       setLoading(false);
     }
@@ -129,6 +120,15 @@ export default function RegisterPage() {
         >
           {loading ? "Registrando..." : "Registrarse"}
         </button>
+
+        <button
+          type="button"
+          onClick={() => window.location.href = "http://localhost:3001/api/auth/google"}
+          className="bg-red-500 text-white p-2 rounded w-full mt-4"
+        >
+          Registrarse con Google
+        </button>
+
       </form>
     </div>
   );

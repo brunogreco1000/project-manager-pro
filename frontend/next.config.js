@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true
+  reactStrictMode: true,
+  // otras opciones aquí si necesitas
 };
 
-module.exports = nextConfig;
+export default nextConfig; // ✅ ESM

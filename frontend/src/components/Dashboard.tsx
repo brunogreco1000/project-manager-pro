@@ -11,6 +11,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import Link from "next/link";
 
 type Project = {
   id: number;
@@ -19,12 +20,27 @@ type Project = {
 };
 
 export const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { theme } = useTheme();
   const { data: projects, loading, error } = useFetch<Project[]>("/projects");
 
-  if (!user) return null;
+  // Mientras se carga el estado de autenticación
+  if (authLoading) return <div className="text-center py-10">Cargando sesión...</div>;
 
+  // Si no hay usuario logueado
+  if (!user)
+    return (
+      <div className="p-6 max-w-md mx-auto bg-white dark:bg-gray-900 rounded-2xl shadow-md text-center">
+        <p className="text-red-600 font-semibold mb-4">
+          Debes iniciar sesión para acceder al Dashboard.
+        </p>
+        <Link href="/login" className="text-blue-600 hover:underline font-medium">
+          Ir a Login
+        </Link>
+      </div>
+    );
+
+  // Si los proyectos todavía se están cargando
   if (loading)
     return <div className="text-center py-10">Cargando proyectos...</div>;
 

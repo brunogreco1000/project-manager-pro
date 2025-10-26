@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import TaskCard from '../../components/TaskCard.tsx';
+import TaskCard from '../../components/TaskCard';
 
 describe('TaskCard', () => {
   it('renders title, project, and progress', () => {

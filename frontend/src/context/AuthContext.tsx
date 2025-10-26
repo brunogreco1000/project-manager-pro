@@ -3,60 +3,52 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { api } from "../services/api";
 
-type User = {
-  id: number;
-  username: string;
+interface User {
   email: string;
-};
+  username: string;
+}
 
-type AuthContextType = {
+interface AuthContextProps {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
-};
+  loading: boolean;
+}
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Login
-  const login = async (email: string, password: string) => {
-    const res = await api.post("/auth/login", { email, password });
-    setUser(res.data.user);
-  };
-
-  // Register
-  const register = async (username: string, email: string, password: string) => {
-    const res = await api.post("/auth/register", { username, email, password });
-    setUser(res.data.user);
-  };
-
-  // Logout
-  const logout = async () => {
-    await api.post("/auth/logout");
-    setUser(null);
-  };
-
-  // Refrescar usuario desde cookie
-  const refreshUser = async () => {
+  const fetchUser = async () => {
+    setLoading(true);
     try {
-      const res = await api.get("/auth/me"); // endpoint que retorna user desde la cookie
-      setUser(res.data.user);
+      const res = await api.get<User>("/auth/me");
+      setUser(res.data);
     } catch {
       setUser(null);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Al iniciar la app, refrescamos usuario
   useEffect(() => {
-    refreshUser();
+    fetchUser();
   }, []);
 
+  const login = async (email: string, password: string) => {
+    await api.post("/auth/login", { email, password });
+    await fetchUser();
+  };
+
+  const logout = async () => {
+    await api.post("/auth/logout", {});
+    setUser(null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

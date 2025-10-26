@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { api } from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
+import { useRouter } from "next/navigation.tsx";
+import { api } from "../../services/api.tsx";
+import { useAuth } from "../../context/AuthContext.tsx";
 
 export default function NewTaskPage() {
   const { user } = useAuth();
